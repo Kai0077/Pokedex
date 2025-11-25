@@ -1,40 +1,43 @@
 import "./style.css";
-import { getAllCharacters, type Character } from "./api";
+import { fetchCharacters, type Character } from "./api";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
 app.innerHTML = `
   <h1>Pokedex Characters</h1>
-  <button id="reload-btn">Reload characters</button>
-  <div id="status"></div>
-  <ul id="character-list"></ul>
+  <button id="reload-btn">Reload</button>
+  <div id="character-container" class="characters"></div>
 `;
 
-const listEl = document.getElementById("character-list") as HTMLUListElement;
-const statusEl = document.getElementById("status") as HTMLDivElement;
-const reloadBtn = document.getElementById("reload-btn") as HTMLButtonElement;
+const container = document.getElementById("character-container")!;
+const reloadBtn = document.getElementById("reload-btn")!;
 
 async function loadCharacters() {
-  statusEl.textContent = "Loading...";
-  listEl.innerHTML = "";
+  container.innerHTML = "<p>Loading...</p>";
 
   try {
-    const characters: Character[] = await getAllCharacters();
+    const characters: Character[] = await fetchCharacters();
 
-    if (!Array.isArray(characters) || characters.length === 0) {
-      statusEl.textContent = "No characters found.";
+    if (!characters.length) {
+      container.innerHTML = "<p>No characters found.</p>";
       return;
     }
 
-    statusEl.textContent = "";
-    characters.forEach((ch) => {
-      const li = document.createElement("li");
-      li.textContent = ch.name ?? `Character #${ch.id}`;
-      listEl.appendChild(li);
-    });
-  } catch (err) {
-    console.error(err);
-    statusEl.textContent = "Failed to load characters.";
+    container.innerHTML = characters
+      .map(
+        (c) => `
+        <a class="card" href="/character.html?id=${c.id}">
+          <h2>${c.firstname} ${c.lastname}</h2>
+          <p><strong>Age:</strong> ${c.age}</p>
+          <p><strong>Gender:</strong> ${c.gender}</p>
+          <p><strong>Decks:</strong> ${c.deckCount}</p>
+        </a>
+      `,
+      )
+      .join("");
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = "<p>Failed to load characters.</p>";
   }
 }
 
