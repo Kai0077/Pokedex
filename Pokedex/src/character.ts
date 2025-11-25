@@ -2,12 +2,12 @@ import "./style.css";
 import {
   fetchCharacterPokemons,
   fetchCharacters,
-  fetchDecks,
+  fetchCharacterDecks,
   gatherPokemon,
   createDeck,
   type Pokemon,
   type Character,
-  type Deck,
+  type CharacterDeck,
 } from "./api";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -23,13 +23,13 @@ app.innerHTML = `
 
   <div id="status"></div>
 
-  <h2>Pokémon Inventory</h2>
-  <div id="pokemon-container" class="pokemon-grid"></div>
-
   <h2>Decks</h2>
   <div id="deck-container" class="deck-grid"></div>
 
-  <!-- Modal -->
+  <h2>Pokémon Inventory</h2>
+  <div id="pokemon-container" class="pokemon-grid"></div>
+
+  <!-- Deck Modal -->
   <div id="deck-modal" class="modal hidden">
     <div class="modal-content">
       <h2>Create Deck</h2>
@@ -52,6 +52,18 @@ app.innerHTML = `
       <div id="deck-error" class="error-text"></div>
     </div>
   </div>
+
+  <!-- Pokémon Info Modal -->
+  <div id="pokemon-modal" class="modal hidden">
+    <div class="modal-content pokemon-modal-content">
+      <h2 id="pokemon-modal-name"></h2>
+      <img id="pokemon-modal-img" class="pokemon-modal-img" src="" alt="" />
+      <div id="pokemon-modal-stats" class="pokemon-modal-stats"></div>
+      <div class="modal-actions">
+        <button id="pokemon-modal-close">Close</button>
+      </div>
+    </div>
+  </div>
 `;
 
 const statusEl = document.getElementById("status") as HTMLDivElement;
@@ -70,7 +82,8 @@ const createDeckBtn = document.getElementById(
   "create-deck-btn",
 ) as HTMLButtonElement;
 
-const modal = document.getElementById("deck-modal") as HTMLDivElement;
+// deck modal elements
+const deckModal = document.getElementById("deck-modal") as HTMLDivElement;
 const deckNameInput = document.getElementById(
   "deck-name-input",
 ) as HTMLInputElement;
@@ -87,6 +100,23 @@ const cancelDeckBtn = document.getElementById(
   "cancel-deck-btn",
 ) as HTMLButtonElement;
 const deckErrorEl = document.getElementById("deck-error") as HTMLDivElement;
+
+// pokemon info modal elements
+const pokemonModal = document.getElementById(
+  "pokemon-modal",
+) as HTMLDivElement;
+const pokemonModalName = document.getElementById(
+  "pokemon-modal-name",
+) as HTMLHeadingElement;
+const pokemonModalImg = document.getElementById(
+  "pokemon-modal-img",
+) as HTMLImageElement;
+const pokemonModalStats = document.getElementById(
+  "pokemon-modal-stats",
+) as HTMLDivElement;
+const pokemonModalClose = document.getElementById(
+  "pokemon-modal-close",
+) as HTMLButtonElement;
 
 // Get character id from query string
 const params = new URLSearchParams(window.location.search);
@@ -119,8 +149,8 @@ async function init(characterId: number) {
       titleEl.textContent = `Character #${characterId}`;
     }
 
-    await loadPokemons(characterId);
     await loadDecks(characterId);
+    await loadPokemons(characterId);
   } catch (err) {
     console.error(err);
     statusEl.textContent = "Failed to load character data.";
@@ -128,13 +158,53 @@ async function init(characterId: number) {
   }
 }
 
+// Load decks from /api/character/:id/decks
+async function loadDecks(characterId: number) {
+  deckContainer.innerHTML = "<p>Loading decks...</p>";
+
+  try {
+    const decks: CharacterDeck[] = await fetchCharacterDecks(characterId);
+
+    if (!decks.length) {
+      deckContainer.innerHTML = "<p>No decks yet.</p>";
+      return;
+    }
+
+    deckContainer.innerHTML = decks
+      .map(
+        (d) => `
+        <div class="card deck-card">
+          <h3>${d.name}</h3>
+          <div class="deck-pokemon-list">
+            ${d.pokemon
+              .map(
+                (p) => `
+              <div class="deck-pokemon-item">
+                <img src="${p.spriteUrl}" alt="${p.name}" />
+                <span>${p.name}</span>
+              </div>
+            `,
+              )
+              .join("")}
+          </div>
+        </div>
+      `,
+      )
+      .join("");
+  } catch (err) {
+    console.error(err);
+    deckContainer.innerHTML = "<p>Failed to load decks.</p>";
+  }
+}
+
+// Load Pokémon inventory and mark new ones with "!!"
 async function loadPokemons(characterId: number) {
   statusEl.textContent = "Loading Pokémon...";
 
   try {
     const pokemons: Pokemon[] = await fetchCharacterPokemons(characterId);
 
-    // detect which ones are new compared to last load
+    // detect new ones compared to previous load
     const newOnes: number[] = pokemons
       .filter((p) => !previousPokemonIds.has(p.id))
       .map((p) => p.id);
@@ -160,15 +230,18 @@ async function loadPokemons(characterId: number) {
           <img src="${p.spriteOfficialUrl || p.spriteUrl}" alt="${
             p.name
           }" class="pokemon-img" />
-          <h2>${p.name}</h2>
-          <p><strong>Type:</strong> ${p.types}</p>
-          <p><strong>HP:</strong> ${p.hp}</p>
-          <p><strong>Attack:</strong> ${p.attack}</p>
-          <p><strong>Defence:</strong> ${p.defence}</p>
+          <div class="pokemon-card-footer">
+            <h2>${p.name}</h2>
+            <button class="pokemon-info-btn" data-id="${
+              p.id
+            }" aria-label="View info">i</button>
+          </div>
         </div>
       `;
       })
       .join("");
+
+    attachPokemonInfoHandlers();
   } catch (err) {
     console.error(err);
     statusEl.textContent = "Failed to load Pokémon.";
@@ -176,41 +249,49 @@ async function loadPokemons(characterId: number) {
   }
 }
 
-async function loadDecks(characterId: number) {
-  deckContainer.innerHTML = "<p>Loading decks...</p>";
+function attachPokemonInfoHandlers() {
+  const infoButtons =
+    pokemonContainer.querySelectorAll<HTMLButtonElement>(".pokemon-info-btn");
 
-  try {
-    const decks: Deck[] = await fetchDecks(characterId);
-
-    if (!decks.length) {
-      deckContainer.innerHTML = "<p>No decks yet.</p>";
-      return;
-    }
-
-    deckContainer.innerHTML = decks
-      .map(
-        (d) => `
-        <div class="card deck-card">
-          <h3>${d.name}</h3>
-          ${
-            d.pokemonCount != null
-              ? `<p><strong>Cards:</strong> ${d.pokemonCount}</p>`
-              : ""
-          }
-          ${
-            d.pokemonIds
-              ? `<p><strong>Pokémon IDs:</strong> ${d.pokemonIds.join(", ")}</p>`
-              : ""
-          }
-        </div>
-      `,
-      )
-      .join("");
-  } catch (err) {
-    console.error(err);
-    deckContainer.innerHTML = "<p>Failed to load decks.</p>";
-  }
+  infoButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = Number(btn.dataset.id);
+      const pokemon = currentPokemons.find((p) => p.id === id);
+      if (!pokemon) return;
+      openPokemonModal(pokemon);
+    });
+  });
 }
+
+function openPokemonModal(pokemon: Pokemon) {
+  pokemonModalName.textContent = pokemon.name;
+  pokemonModalImg.src = pokemon.spriteOfficialUrl || pokemon.spriteUrl;
+  pokemonModalImg.alt = pokemon.name;
+
+  pokemonModalStats.innerHTML = `
+    <p><strong>Type:</strong> ${pokemon.types}</p>
+    <p><strong>HP:</strong> ${pokemon.hp}</p>
+    <p><strong>Attack:</strong> ${pokemon.attack}</p>
+    <p><strong>Defence:</strong> ${pokemon.defence}</p>
+  `;
+
+  pokemonModal.classList.remove("hidden");
+}
+
+function closePokemonModal() {
+  pokemonModal.classList.add("hidden");
+}
+
+pokemonModalClose.addEventListener("click", () => {
+  closePokemonModal();
+});
+
+// optional: close pokemon modal by clicking backdrop
+pokemonModal.addEventListener("click", (e) => {
+  if (e.target === pokemonModal) {
+    closePokemonModal();
+  }
+});
 
 // Button: Gather Pokémon
 gatherBtn.addEventListener("click", async () => {
@@ -237,7 +318,7 @@ createDeckBtn.addEventListener("click", () => {
   selectedPokemonIds = [];
   renderSelectedSlots();
   renderPokemonSelection();
-  openModal();
+  openDeckModal();
 });
 
 function renderSelectedSlots() {
@@ -306,17 +387,17 @@ function renderPokemonSelection() {
   });
 }
 
-function openModal() {
-  modal.classList.remove("hidden");
+function openDeckModal() {
+  deckModal.classList.remove("hidden");
 }
 
-function closeModal() {
-  modal.classList.add("hidden");
+function closeDeckModal() {
+  deckModal.classList.add("hidden");
 }
 
 // Modal: cancel
 cancelDeckBtn.addEventListener("click", () => {
-  closeModal();
+  closeDeckModal();
 });
 
 // Modal: save deck
@@ -336,7 +417,7 @@ saveDeckBtn.addEventListener("click", async () => {
 
   try {
     await createDeck(characterId, name, selectedPokemonIds);
-    closeModal();
+    closeDeckModal();
     statusEl.textContent = `Deck "${name}" created successfully.`;
     await loadDecks(characterId);
   } catch (err) {

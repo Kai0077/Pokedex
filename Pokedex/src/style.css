@@ -309,3 +309,122 @@ button {
   border-radius: 4px;
   font-weight: bold;
 }
+
+/* footer with name + info icon */
+.pokemon-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+}
+
+.pokemon-info-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: none;
+  background: #333;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.pokemon-info-btn:hover {
+  background: #555;
+}
+
+/* Pokémon modal tweaks */
+.pokemon-modal-content {
+  max-width: 360px;
+  text-align: center;
+}
+
+.pokemon-modal-img {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  margin: 0.5rem auto 1rem;
+  animation: float 1.6s ease-in-out infinite;
+}
+
+.pokemon-modal-stats p {
+  margin: 0.1rem 0;
+}
+
+/* simple float animation */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* keep your !! badge styles if not already added */
+.new-pokemon {
+  position: relative;
+  border: 2px solid #ff9900 !important;
+}
+
+.new-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ff9900;
+  color: white;
+  padding: 4px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.home-header button {
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.form-group {
+  margin-bottom: 0.75rem;
+}
+
+.form-group input,
+.form-group select {
+  margin-top: 0.25rem;
+  width: 100%;
+  padding: 0.35rem;
+}
+
+.starter-grid {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.starter-option {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.starter-option input {
+  margin: 0;
+}

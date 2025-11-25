@@ -22,11 +22,27 @@ export type Pokemon = {
   spriteOfficialUrl: string;
 };
 
+// Decks from /api/deck/:characterId (if you ever use that)
 export type Deck = {
   id: number;
   name: string;
   pokemonCount?: number;
   pokemonIds?: number[];
+};
+
+// Decks from /api/character/:id/decks
+export type CharacterDeck = {
+  deckId: number;
+  name: string;
+  pokemon: Pokemon[];
+};
+
+export type NewCharacterPayload = {
+  firstName: string;
+  lastName: string;
+  age: number;
+  gender: string;
+  starter: "Charmander" | "Bulbasaur" | "Squirtle";
 };
 
 export async function fetchCharacters(): Promise<Character[]> {
@@ -78,5 +94,35 @@ export async function fetchDecks(characterId: number): Promise<Deck[]> {
   if (!res.ok) {
     throw new Error(`Failed to load decks for character ${characterId}`);
   }
+  return res.json();
+}
+
+export async function fetchCharacterDecks(
+  characterId: number,
+): Promise<CharacterDeck[]> {
+  const res = await fetch(`${CHARACTER_API_URL}/${characterId}/decks`);
+  if (!res.ok) {
+    throw new Error(
+      `Failed to load character decks for character ${characterId}`,
+    );
+  }
+  return res.json();
+}
+
+// NEW: create character
+export async function createCharacter(
+  payload: NewCharacterPayload,
+): Promise<Character> {
+  const res = await fetch(CHARACTER_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to create character: ${res.status}`);
+  }
+
+  // assuming backend returns the created character
   return res.json();
 }
