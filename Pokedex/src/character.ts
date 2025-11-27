@@ -158,6 +158,47 @@ async function init(characterId: number) {
   }
 }
 
+let nextGatherAtMs: number | null = null;
+let gatherTimerId: number | null = null;
+
+function formatDuration(ms: number): string {
+  const totalSec = Math.ceil(ms / 1000);
+  const minutes = Math.floor(totalSec / 60);
+  const seconds = totalSec % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+function updateGatherButtonState() {
+  if (!gatherBtn) return;
+
+  if (!nextGatherAtMs) {
+    gatherBtn.disabled = false;
+    gatherBtn.textContent = "Gather Pokémon";
+    return;
+  }
+
+  const now = Date.now();
+  const diff = nextGatherAtMs - now;
+
+  if (diff <= 0) {
+    gatherBtn.disabled = false;
+    gatherBtn.textContent = "Gather Pokémon";
+    nextGatherAtMs = null; // reset once cooldown expired
+  } else {
+    gatherBtn.disabled = true;
+    gatherBtn.textContent = `Gather in ${formatDuration(diff)}`;
+  }
+}
+
+function startGatherTimer() {
+  if (gatherTimerId != null) {
+    window.clearInterval(gatherTimerId);
+  }
+  gatherTimerId = window.setInterval(() => {
+    updateGatherButtonState();
+  }, 1000);
+}
+
 // Load decks from /api/character/:id/decks
 async function loadDecks(characterId: number) {
   deckContainer.innerHTML = "<p>Loading decks...</p>";
@@ -296,13 +337,37 @@ pokemonModal.addEventListener("click", (e) => {
 // Button: Gather Pokémon
 gatherBtn.addEventListener("click", async () => {
   statusEl.textContent = "Gathering Pokémon...";
+  gatherBtn.disabled = true;
+
   try {
-    await gatherPokemon(characterId);
+    const res = await gatherPokemon(characterId);
     await loadPokemons(characterId);
-    statusEl.textContent = "Pokémon gathered successfully.";
-  } catch (err) {
+
+    statusEl.textContent = res.message || "Pokémon gathered successfully.";
+
+    if (res.nextGatherAt) {
+      nextGatherAtMs = new Date(res.nextGatherAt).getTime();
+    } else if (res.lastGatherAt) {
+      // fallback: 60 min after lastGatherAt
+      const last = new Date(res.lastGatherAt).getTime();
+      nextGatherAtMs = last + 60 * 60 * 1000;
+    } else {
+      nextGatherAtMs = null;
+    }
+
+    updateGatherButtonState();
+    startGatherTimer();
+  } catch (err: unknown) {
     console.error(err);
-    statusEl.textContent = "Failed to gather Pokémon.";
+    if (err instanceof Error) {
+      statusEl.textContent = err.message;
+    } else {
+      statusEl.textContent = "Failed to gather Pokémon.";
+    }
+
+    // if backend rejected because of cooldown, we keep whatever
+    // nextGatherAtMs we had (or null) and update button state
+    updateGatherButtonState();
   }
 });
 

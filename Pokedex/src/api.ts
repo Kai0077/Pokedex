@@ -45,6 +45,15 @@ export type NewCharacterPayload = {
   starter: "Charmander" | "Bulbasaur" | "Squirtle";
 };
 
+export type GatherResponse = {
+  message: string;
+  characterId: number;
+  count: number;
+  lastGatherAt?: string;  // "2025-11-27T09:51:32.219Z"
+  nextGatherAt?: string;  // "2025-11-27T10:51:32.219Z"
+  data: Pokemon[];
+};
+
 export async function fetchCharacters(): Promise<Character[]> {
   const res = await fetch(CHARACTER_API_URL);
   if (!res.ok) {
@@ -63,14 +72,25 @@ export async function fetchCharacterPokemons(
   return res.json();
 }
 
-export async function gatherPokemon(characterId: number): Promise<void> {
+
+export async function gatherPokemon(
+  characterId: number,
+): Promise<GatherResponse> {
   const res = await fetch(`${CHARACTER_API_URL}/${characterId}/pokemon`, {
     method: "POST",
   });
 
+  const body = await res.json().catch(() => null);
+
   if (!res.ok) {
-    throw new Error(`Failed to gather Pokémon: ${res.status}`);
+    const msg =
+      body && typeof body.error === "string"
+        ? body.error
+        : `Failed to gather Pokémon: ${res.status}`;
+    throw new Error(msg);
   }
+
+  return body as GatherResponse;
 }
 
 export async function createDeck(
