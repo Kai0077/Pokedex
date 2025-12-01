@@ -214,24 +214,28 @@ async function loadDecks(characterId: number) {
     deckContainer.innerHTML = decks
       .map(
         (d) => `
-        <div class="card deck-card">
-          <h3>${d.name}</h3>
-          <div class="deck-pokemon-list">
-            ${d.pokemon
-              .map(
-                (p) => `
-              <div class="deck-pokemon-item">
-                <img src="${p.spriteUrl}" alt="${p.name}" />
-                <span>${p.name}</span>
-              </div>
-            `,
-              )
-              .join("")}
+          <div class="card deck-card">
+            <div class="deck-header">
+              <h3>${d.name}</h3>
+              <span class="deck-rank deck-rank-${d.rank}">${d.rank}</span>
+            </div>
+            <div class="deck-pokemon-list">
+              ${d.pokemon
+                .map(
+                  (p) => `
+                <div class="deck-pokemon-item">
+                  <img src="${p.spriteUrl}" alt="${p.name}" />
+                  <span>${p.name}</span>
+                </div>
+              `,
+                )
+                .join("")}
+            </div>
           </div>
-        </div>
-      `,
+        `,
       )
       .join("");
+
   } catch (err) {
     console.error(err);
     deckContainer.innerHTML = "<p>Failed to load decks.</p>";
