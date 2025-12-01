@@ -34,6 +34,7 @@ export type Deck = {
 export type CharacterDeck = {
   deckId: number;
   name: string;
+  rank: "S" | "A" | "B" | "C" | "D";
   pokemon: Pokemon[];
 };
 
@@ -122,11 +123,24 @@ export async function fetchCharacterDecks(
 ): Promise<CharacterDeck[]> {
   const res = await fetch(`${CHARACTER_API_URL}/${characterId}/decks`);
   if (!res.ok) {
-    throw new Error(
-      `Failed to load character decks for character ${characterId}`,
-    );
+    throw new Error(`Failed to fetch decks for character ${characterId}: ${res.status}`);
   }
-  return res.json();
+
+  const data = await res.json();
+
+  // If backend returns an array: [ ... ]
+  if (Array.isArray(data)) {
+    return data as CharacterDeck[];
+  }
+
+  // If backend returns { decks: [...] }
+  if (Array.isArray(data.decks)) {
+    return data.decks as CharacterDeck[];
+  }
+
+  // Fallback to help debugging
+  console.error("Unexpected decks response:", data);
+  throw new Error("Unexpected decks response format");
 }
 
 // NEW: create character

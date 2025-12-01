@@ -428,3 +428,40 @@ button {
 .starter-option input {
   margin: 0;
 }
+
+.deck-card {
+  position: relative;
+}
+
+/* generic badge */
+.deck-rank {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: white;
+}
+
+/* per-rank colors – tweak as you like */
+.deck-rank-S {
+  background: #8b5cf6; /* purple/god tier */
+}
+
+.deck-rank-A {
+  background: #22c55e;
+}
+
+.deck-rank-B {
+  background: #3b82f6;
+}
+
+.deck-rank-C {
+  background: #f97316;
+}
+
+.deck-rank-D {
+  background: #ef4444;
+}
