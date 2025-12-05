@@ -82,7 +82,7 @@ const createDeckBtn = document.getElementById(
   "create-deck-btn",
 ) as HTMLButtonElement;
 
-// deck modal elements
+// DECK MODAL ELEMENTS
 const deckModal = document.getElementById("deck-modal") as HTMLDivElement;
 const deckNameInput = document.getElementById(
   "deck-name-input",
@@ -101,7 +101,7 @@ const cancelDeckBtn = document.getElementById(
 ) as HTMLButtonElement;
 const deckErrorEl = document.getElementById("deck-error") as HTMLDivElement;
 
-// pokemon info modal elements
+// POKEMON INFO MODAL ELEMENTS
 const pokemonModal = document.getElementById(
   "pokemon-modal",
 ) as HTMLDivElement;
@@ -126,7 +126,7 @@ const characterId = idParam ? Number(idParam) : NaN;
 let currentPokemons: Pokemon[] = [];
 let selectedPokemonIds: number[] = [];
 
-// track previous + new pokemon ids for "!!" marker
+// Track previous and new pokemon ids for "!!" marker
 let previousPokemonIds: Set<number> = new Set();
 let newPokemonIds: Set<number> = new Set();
 
@@ -199,7 +199,7 @@ function startGatherTimer() {
   }, 1000);
 }
 
-// Load decks from /api/character/:id/decks
+// Load decks /character/:id/decks
 async function loadDecks(characterId: number) {
   deckContainer.innerHTML = "<p>Loading decks...</p>";
 
@@ -242,7 +242,7 @@ async function loadDecks(characterId: number) {
   }
 }
 
-// Load Pokémon inventory and mark new ones with "!!"
+// Load Pokemon inventory and mark new ones with "!!"
 async function loadPokemons(characterId: number) {
   statusEl.textContent = "Loading Pokémon...";
 
@@ -331,14 +331,14 @@ pokemonModalClose.addEventListener("click", () => {
   closePokemonModal();
 });
 
-// optional: close pokemon modal by clicking backdrop
+// close pokemon modal
 pokemonModal.addEventListener("click", (e) => {
   if (e.target === pokemonModal) {
     closePokemonModal();
   }
 });
 
-// Button: Gather Pokémon
+// Gather Pokemon
 gatherBtn.addEventListener("click", async () => {
   statusEl.textContent = "Gathering Pokémon...";
   gatherBtn.disabled = true;
@@ -352,7 +352,7 @@ gatherBtn.addEventListener("click", async () => {
     if (res.nextGatherAt) {
       nextGatherAtMs = new Date(res.nextGatherAt).getTime();
     } else if (res.lastGatherAt) {
-      // fallback: 60 min after lastGatherAt
+      // 60 min after lastGatherAt
       const last = new Date(res.lastGatherAt).getTime();
       nextGatherAtMs = last + 60 * 60 * 1000;
     } else {

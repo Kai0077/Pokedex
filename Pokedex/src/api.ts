@@ -1,6 +1,7 @@
-const CHARACTER_API_URL = "http://localhost:3000/api/character";
-const DECK_API_URL = "http://localhost:3000/api/deck";
-const POKEMON_API_URL = "http://localhost:3000/api/pokemon";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+const CHARACTER_API_URL = `${BASE_URL}character`;
+const DECK_API_URL = `${BASE_URL}deck`;
 
 export type Character = {
   id: number;
@@ -22,7 +23,7 @@ export type Pokemon = {
   spriteOfficialUrl: string;
 };
 
-// Decks from /api/deck/:characterId (if you ever use that)
+// Decks /deck/:characterId
 export type Deck = {
   id: number;
   name: string;
@@ -30,7 +31,7 @@ export type Deck = {
   pokemonIds?: number[];
 };
 
-// Decks from /api/character/:id/decks
+// Decks /character/:id/decks
 export type CharacterDeck = {
   deckId: number;
   name: string;
@@ -50,8 +51,8 @@ export type GatherResponse = {
   message: string;
   characterId: number;
   count: number;
-  lastGatherAt?: string;  // "2025-11-27T09:51:32.219Z"
-  nextGatherAt?: string;  // "2025-11-27T10:51:32.219Z"
+  lastGatherAt?: string;
+  nextGatherAt?: string;
   data: Pokemon[];
 };
 
@@ -128,22 +129,17 @@ export async function fetchCharacterDecks(
 
   const data = await res.json();
 
-  // If backend returns an array: [ ... ]
   if (Array.isArray(data)) {
     return data as CharacterDeck[];
   }
 
-  // If backend returns { decks: [...] }
   if (Array.isArray(data.decks)) {
     return data.decks as CharacterDeck[];
   }
 
-  // Fallback to help debugging
-  console.error("Unexpected decks response:", data);
   throw new Error("Unexpected decks response format");
 }
 
-// NEW: create character
 export async function createCharacter(
   payload: NewCharacterPayload,
 ): Promise<Character> {
@@ -157,6 +153,5 @@ export async function createCharacter(
     throw new Error(`Failed to create character: ${res.status}`);
   }
 
-  // assuming backend returns the created character
   return res.json();
 }
